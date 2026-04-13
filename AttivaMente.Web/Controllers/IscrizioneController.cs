@@ -1,4 +1,6 @@
-﻿using AttivaMente.Data;
+﻿using AttivaMente.Core.Models;
+using AttivaMente.Core.OfficeAutomation;
+using AttivaMente.Data;
 using AttivaMente.Web.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 
@@ -109,30 +111,84 @@ namespace AttivaMente.Web.Controllers
         }
 
         [HttpPost]
-        public IActionResult Delete(int utenteId, int anno, bool isSoloIscritti, string? ricerca = null)
+        public IActionResult Delete(int utenteId, int anno, bool isSoloIscritti, string? ricerca = null,bool fromDettaglio=false)
         {
             _repoIscrizioni.Delete(utenteId, anno);
+            if (fromDettaglio)
+                return RedirectToAction("Details", "Utente", new { id = utenteId });
+
             return RedirectToAction("Index", new { anno, isSoloIscritti, ricerca });
+        }
+        //compito
+        [HttpPost]
+        public IActionResult Update([FromBody] UpdateIscrizioneRequest request)
+        {
+            int result = _repoIscrizioni.Update(request.UtenteId, request.Anno, request.Tipo, DateTime.Parse(request.DataIscrizione));
+            if (result > 0)
+                return Ok();
+            else
+                return BadRequest();
+        }
+
+        public IActionResult Storico(int utenteId)
+        {
+            var utente = _repoUtenti.GetById(utenteId);
+            if (utente == null) return NotFound();
+            ViewBag.Utente = utente;
+            var iscrizioni = _repoIscrizioni.GetByUtente(utenteId);
+            return View(iscrizioni);
+        }
+        public IActionResult Statistiche()
+        {
+            var statistiche = _repoIscrizioni.GetStatistiche();
+            return View(statistiche);
         }
 
         [HttpPost]
-        public IActionResult Renew(int utenteId, int anno, bool isSoloIscritti, string? ricerca = null)
+        public IActionResult Renew(int utenteId, int anno, bool isSoloIscritti, string? ricerca = null,bool fromDettaglio=false)
         {
             if (!_repoIscrizioni.Exists(utenteId, anno))
             {
                 _repoIscrizioni.Insert(utenteId, anno, "Rinnovo");
             }
+            if (fromDettaglio)
+                return RedirectToAction("Details", "Utente", new { id = utenteId });
+
             return RedirectToAction("Index", new { anno, isSoloIscritti, ricerca });
         }
 
         [HttpPost]
-        public IActionResult Subscribe(int utenteId, int anno, bool isSoloIscritti, string? ricerca = null)
+        public IActionResult Subscribe(int utenteId, int anno, bool isSoloIscritti, string? ricerca = null, bool fromDettaglio = false)
         {
             if (!_repoIscrizioni.Exists(utenteId, anno))
-            {
                 _repoIscrizioni.Insert(utenteId, anno, "Nuova");
-            }
+
+            if (fromDettaglio)
+                return RedirectToAction("Details", "Utente", new { id = utenteId });
+
             return RedirectToAction("Index", new { anno, isSoloIscritti, ricerca });
         }
+
+
+
+        public IActionResult CreateXlsx(int? anno)
+        {
+            var iscrizioni = anno.HasValue
+                ? _repoIscrizioni.GetByYear(anno.Value)
+                : _repoIscrizioni.GetAll(); // ← tutti gli anni
+
+            byte[] fileBytes = ExcelAutomation.GetIscrizioniXlsxBytes(iscrizioni);
+            return File(
+                fileBytes,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                $"Iscrizioni_{anno?.ToString() ?? "tutti"}.xlsx");
+        }
     }
+}
+public class UpdateIscrizioneRequest //DTO per asp net
+{
+    public int UtenteId { get; set; }
+    public int Anno { get; set; }
+    public string Tipo { get; set; } = "";
+    public string DataIscrizione { get; set; } = "";
 }

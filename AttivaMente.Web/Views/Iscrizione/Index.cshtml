@@ -2,7 +2,13 @@
 @model IscrizioniIndexViewModel
 
 <h2 class="mb-2">Iscrizioni - @Model.SelectedYear</h2>
+<a asp-action="Statistiche" class="btn btn-secondary mb-3">Statistiche</a>
+<a asp-action="CreateXlsx"
+   asp-route-anno="@Model.SelectedYear"
+   class="btn btn-success mb-3">Scarica XLSX anno selezionato</a>
 
+<a asp-action="CreateXlsx"
+   class="btn btn-success mb-3">Scarica XLSX tutti gli anni</a>
 <form method="get" asp-action="Index" class="mb-3">
     <div class="d-flex justify-content-between align-items-end gap-3 flex-wrap">
         <div class="d-flex align-items-end gap-3 flex-wrap">
@@ -60,6 +66,7 @@
             <th>Tipo</th>
             <th>Data Iscrizione</th>
             <th style="width: 140px;">AZIONI</th>
+            <th>Storico</th>
         </tr>
     </thead>
 
@@ -78,8 +85,29 @@
                     <td>@row.Cognome</td>
                     <td>@row.Nome</td>
                     <td>@row.Email</td>
-                    <td>@row.Tipo</td>
-                    <td>@row.DataIscrizione?.ToString("dd/MM/yyyy")</td>
+                    <td>
+                        @if(row.Tipo != null)
+                        {
+                        <select class="iscrizione-field"
+                                data-utenteid="@row.UtenteId"
+                                data-anno="@Model.SelectedYear">
+                                <option value="Nuova" selected="@(row.Tipo == "Nuova")">Nuova</option>
+                                <option value="Rinnovo" selected="@(row.Tipo == "Rinnovo")">Rinnovo</option>
+                        </select>
+                        }
+                        
+                    </td>
+                    <td>
+                        @if(row.DataIscrizione != null)
+                        {
+                               <input type="date"
+                               class="iscrizione-field"
+                               data-utenteid="@row.UtenteId"
+                               data-anno="@Model.SelectedYear"
+                               value="@row.DataIscrizione?.ToString("yyyy-MM-dd")" />
+                        }
+                        
+                        </td>
                     <td>
                         @if (row.Azione == "Cancella")
                         {
@@ -115,8 +143,40 @@
                             </form>
                         }
                     </td>
+                    <td>
+                        <a asp-action="Storico" asp-controller="Iscrizione" asp-route-utenteId="@row.UtenteId" class="btn btn-info btn-sm">Storico</a>
+
+                    </td>
                 </tr>
             }
         }
     </tbody>
 </table>
+
+<script>
+    document.querySelectorAll('.iscrizione-field').forEach(function(elemento) {
+        elemento.addEventListener('change', function() {
+            const utenteId = this.dataset.utenteid;
+            const anno = this.dataset.anno;
+            const tipo = document.querySelector('select[data-utenteid="' + utenteId + '"]').value;
+            const dataIscrizione = document.querySelector('input[data-utenteid="' + utenteId + '"]').value;
+
+
+            fetch('/Iscrizione/Update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                utenteId: utenteId,
+                anno: anno,
+                tipo: tipo,
+                dataIscrizione: dataIscrizione
+            })
+        }).then(function(response) {
+            if (!response.ok) {
+                alert('Errore nel salvataggio');
+            }
+        });
+        
+        });
+    });
+</script>

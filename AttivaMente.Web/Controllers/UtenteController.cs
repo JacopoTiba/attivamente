@@ -11,12 +11,14 @@ namespace AttivaMente.Web.Controllers
     {
         private readonly UtenteRepository _repoUtenti;
         private readonly RuoloRepository _repoRuoli;
+        private readonly IscrizioneRepository _repoIscrizioni;
 
         public UtenteController(IConfiguration configuration)
         {
             string connStr = configuration.GetConnectionString("DefaultConnection");
             _repoUtenti = new UtenteRepository(connStr);
             _repoRuoli = new RuoloRepository(connStr);
+            _repoIscrizioni = new IscrizioneRepository(connStr);
         }
 
         public IActionResult Index(
@@ -50,7 +52,14 @@ namespace AttivaMente.Web.Controllers
         {
             ViewBag.Title = $"Dettaglio Utente {id}";
             var utente = _repoUtenti.GetById(id);
-            return utente == null ? NotFound() : View(utente);
+            if (utente == null) return NotFound();
+
+            int anno = DateTime.Now.Year;
+            ViewBag.Anno = anno;
+            ViewBag.IsIscritto = _repoIscrizioni.Exists(id, anno);
+            ViewBag.IsIscrittoAnnoPrecedente = _repoIscrizioni.Exists(id, anno - 1);
+
+            return View(utente);
         }
 
         public IActionResult Create()

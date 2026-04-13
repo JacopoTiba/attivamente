@@ -1,5 +1,7 @@
 ﻿using AttivaMente.Core.Models;
+using AttivaMente.Web.ViewModels;
 using Microsoft.Data.SqlClient;
+
 
 namespace AttivaMente.Data
 {
@@ -58,6 +60,78 @@ namespace AttivaMente.Data
             return list;
         }
 
+        public List<Iscrizione> GetAll()
+        {
+            var list = new List<Iscrizione>();
+
+            string query = @"
+                SELECT  i.Id, i.UtenteId, i.Anno, i.Tipo, i.DataIscrizione,
+                        u.Id, u.Nome, u.Cognome, u.Email
+                FROM Iscrizioni i
+                INNER JOIN Utenti u ON i.UtenteId = u.Id
+                ORDER BY u.Cognome, u.Nome";
+
+            using var reader = _db.ExecuteReader(query);
+
+            while (reader.Read())
+            {
+                list.Add(new Iscrizione
+                {
+                    Id = reader.GetInt32(0),
+                    UtenteId = reader.GetInt32(1),
+                    Anno = reader.GetInt32(2),
+                    Tipo = reader.GetString(3),
+                    DataIscrizione = reader.GetDateTime(4),
+                    Utente = new Utente
+                    {
+                        Id = reader.GetInt32(5),
+                        Nome = reader.GetString(6),
+                        Cognome = reader.GetString(7),
+                        Email = reader.GetString(8)
+                    }
+                }
+                );
+            }
+
+            return list;
+        }
+        public List<Iscrizione> GetByUtente(int utenteId)
+        {
+            var list = new List<Iscrizione>();
+
+            string query = @"
+                SELECT  i.Id, i.UtenteId, i.Anno, i.Tipo, i.DataIscrizione,
+                        u.Id, u.Nome, u.Cognome, u.Email
+                FROM Iscrizioni i
+                INNER JOIN Utenti u ON i.UtenteId = u.Id
+                WHERE i.UtenteId = @utenteId
+                ORDER BY i.Anno DESC";
+
+            var parameters = new[] { new SqlParameter("@utenteId", utenteId) };
+            using var reader = _db.ExecuteReader(query, parameters);
+
+            while (reader.Read())
+            {
+                list.Add(new Iscrizione
+                {
+                    Id = reader.GetInt32(0),
+                    UtenteId = reader.GetInt32(1),
+                    Anno = reader.GetInt32(2),
+                    Tipo = reader.GetString(3),
+                    DataIscrizione = reader.GetDateTime(4),
+                    Utente = new Utente
+                    {
+                        Id = reader.GetInt32(5),
+                        Nome = reader.GetString(6),
+                        Cognome = reader.GetString(7),
+                        Email = reader.GetString(8)
+                    }
+                }
+                );
+            }
+
+            return list;
+        }
         public bool Exists(int utenteId, int anno)
         {
             string query = "SELECT COUNT(*) FROM Iscrizioni WHERE UtenteId=@u AND Anno=@a";
@@ -99,6 +173,51 @@ namespace AttivaMente.Data
             };
 
             return _db.ExecuteNonQuery(sql, parameters);
+        }
+        public int Update(int utenteId, int anno, string tipo, DateTime dataIscrizione)
+        {
+            string sql = "UPDATE Iscrizioni set Tipo=@t, DataIscrizione=@d WHERE UtenteId=@u and Anno=@a";
+            /*
+                UPDATE Customers
+                SET ContactName='Juan'
+                WHERE Country='Mexico';
+            */
+
+            var parameters = new[]
+            {
+                new SqlParameter("@u", utenteId),
+                new SqlParameter("@a", anno),
+                new SqlParameter("@t", tipo),
+                new SqlParameter("@d", dataIscrizione)
+            };
+
+            return _db.ExecuteNonQuery(sql, parameters);
+        }
+        public List<StatisticaAnnoViewModel> GetStatistiche()
+        {
+            var list = new List<StatisticaAnnoViewModel>();
+            string query = @"
+        SELECT 
+            Anno,
+            COUNT(*) AS Totale,
+            SUM(CASE WHEN Tipo = 'Nuova' THEN 1 ELSE 0 END) AS Nuove,
+            SUM(CASE WHEN Tipo = 'Rinnovo' THEN 1 ELSE 0 END) AS Rinnovi
+        FROM Iscrizioni
+        GROUP BY Anno
+        ORDER BY Anno DESC";
+
+            using var reader = _db.ExecuteReader(query);
+            while (reader.Read())
+            {
+                list.Add(new StatisticaAnnoViewModel
+                {
+                    Anno = reader.GetInt32(0),
+                    Totale = reader.GetInt32(1),
+                    Nuove = reader.GetInt32(2),
+                    Rinnovi = reader.GetInt32(3)
+                });
+            }
+            return list;
         }
     }
 }

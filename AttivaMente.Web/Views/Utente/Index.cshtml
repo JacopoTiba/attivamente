@@ -98,6 +98,7 @@
                     <a asp-action="Details" asp-route-id="@utente.Id" class="btn btn-info btn-sm">Dettagli</a>
                     <a asp-action="Edit" asp-route-id="@utente.Id" class="btn btn-warning btn-sm">Modifica</a>
                     <a asp-action="Delete" asp-route-id="@utente.Id" class="btn btn-danger btn-sm">Elimina</a>
+                    <a asp-action="Storico" asp-controller="Iscrizione" asp-route-utenteId="@utente.Id" class="btn btn-info btn-sm">Storico</a>
                 </td>
             </tr>
         }

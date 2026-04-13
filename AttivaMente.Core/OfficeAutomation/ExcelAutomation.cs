@@ -41,5 +41,41 @@ namespace AttivaMente.Core.OfficeAutomation
                 return package.GetAsByteArray();
             }
         }
+
+        public static byte[] GetIscrizioniXlsxBytes(List<Iscrizione> Iscrizioni)
+        {
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+            using (var package = new ExcelPackage())
+            {
+                // costruisco i contenuti del file
+                var ws = package.Workbook.Worksheets.Add("Iscrizioni");
+
+                // intestazioni
+                ws.Cells[1, 1].Value = "Id";
+                ws.Cells[1, 2].Value = "Nome";
+                ws.Cells[1, 3].Value = "Cognome";
+                ws.Cells[1, 4].Value = "Anno";
+                ws.Cells[1, 5].Value = "Tipo";
+                ws.Cells[1, 6].Value = "DataIscrizione";
+
+                // dati
+                int row = 2;
+                foreach (var iscrizione in Iscrizioni)
+                {
+                    ws.Cells[row, 1].Value = iscrizione.UtenteId;
+                    ws.Cells[row, 2].Value = iscrizione.Utente!.Nome;
+                    ws.Cells[row, 3].Value = iscrizione.Utente!.Cognome;
+                    ws.Cells[row, 4].Value = iscrizione.Anno;
+                    ws.Cells[row, 5].Value = iscrizione.Tipo;
+                    ws.Cells[row, 6].Value = iscrizione.DataIscrizione;
+                    ws.Cells[row, 6].Style.Numberformat.Format = "dd/MM/yyyy";
+                    row++;
+                }
+                // larghezza colonne automatica
+                ws.Cells.AutoFitColumns();
+
+                return package.GetAsByteArray();
+            }
+        }
     }
 }

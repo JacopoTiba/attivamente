@@ -12,7 +12,39 @@
 	<tr><th>Email</th><td>@Model.Email</td></tr>
 	<tr><th>Ruolo</th><td>@Model.Ruolo?.Nome</td></tr>
 </table>
+<hr />
+<h4>Iscrizione @ViewBag.Anno</h4>
 
+@if ((bool)ViewBag.IsIscritto)
+{
+    <form method="post" asp-action="Delete" asp-controller="Iscrizione">
+        <input type="hidden" name="utenteId" value="@Model.Id" />
+        <input type="hidden" name="anno" value="@ViewBag.Anno" />
+        <input type="hidden" name="isSoloIscritti" value="true" />
+        <input type="hidden" name="fromDettaglio" value="true" />
+        <button type="submit" class="btn btn-danger">Cancella iscrizione</button>
+    </form>
+}
+else if ((bool)ViewBag.IsIscrittoAnnoPrecedente)
+{
+    <form method="post" asp-action="Renew" asp-controller="Iscrizione">
+        <input type="hidden" name="utenteId" value="@Model.Id" />
+        <input type="hidden" name="anno" value="@ViewBag.Anno" />
+        <input type="hidden" name="isSoloIscritti" value="true" />
+        <input type="hidden" name="fromDettaglio" value="true" />
+        <button type="submit" class="btn btn-primary">Rinnova iscrizione</button>
+    </form>
+}
+else
+{
+    <form method="post" asp-action="Subscribe" asp-controller="Iscrizione">
+        <input type="hidden" name="utenteId" value="@Model.Id" />
+        <input type="hidden" name="anno" value="@ViewBag.Anno" />
+        <input type="hidden" name="isSoloIscritti" value="true" />
+        <input type="hidden" name="fromDettaglio" value="true" />
+        <button type="submit" class="btn btn-success">Iscrivi</button>
+    </form>
+}
 <hr />
 
 <h4>Cronologia attività (in sviluppo)</h4>
