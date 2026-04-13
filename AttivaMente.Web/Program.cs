@@ -8,6 +8,12 @@ var builder = WebApplication.CreateBuilder(args);
 // Aggiunge i servizi MVC (Controllers + Views)
 builder.Services.AddControllersWithViews();
 
+//Aggiunge supporto per Swagger
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+
 var app = builder.Build();
 
 
@@ -84,5 +90,13 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}"
 );
+
+//Se siamo in ambiente di sviluppo, abilitiamo Swagger
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
 
 app.Run();
